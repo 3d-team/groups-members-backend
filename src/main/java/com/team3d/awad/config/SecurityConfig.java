@@ -36,12 +36,6 @@ import java.net.URI;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
-//    @Value("${spring.security.oauth2.client.provider.auth0.issuer-uri}")
-//    private String issuer;
-//
-//    @Value("${spring.security.oauth2.client.registration.auth0.client-id}")
-//    private String clientId;
-
     private static final Logger LOGGER = LogManager.getLogger(SecurityConfig.class);
     private final TokenProvider tokenProvider;
 
@@ -114,6 +108,7 @@ public class SecurityConfig {
 
     @Bean
     protected ReactiveAuthenticationManager reactiveAuthenticationManager() {
+        LOGGER.info("Security setup Authentication Manager!");
         CustomUserDetailsService userDetailsService = new CustomUserDetailsService();
         return authentication -> {
             final String username = authentication.getPrincipal().toString();
@@ -147,10 +142,12 @@ public class SecurityConfig {
 
     @Bean
     public ReactiveOAuth2UserService<OidcUserRequest, OidcUser> oidcUserService() {
+        LOGGER.info("Security setup OAuth2 User Service!");
         return new CustomOAuth2UserService();
     }
 
     private Mono<Void> onAuthenticationSuccess(WebFilterExchange exchange, Authentication authentication) {
+        LOGGER.info("Hit Authentication Success Handler!");
         RedirectServerAuthenticationSuccessHandler redirectServerAuthenticationSuccessHandler =
                 new RedirectServerAuthenticationSuccessHandler();
 

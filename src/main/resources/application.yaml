@@ -25,6 +25,22 @@ spring:
               - openid
               - email
               - profile
+          facebook:
+            clientId: 2948763485431290
+            clientSecret: 68c80f29174c638acce6893ba300008a
+            # Note that facebook now mandates the use of https redirect URIs,
+            # so make sure your app supports https in production
+            redirectUri: "{baseUrl}/oauth2/callback/{registrationId}"
+            scope:
+              - openid
+              - email
+              - public_profile
+        provider:
+          facebook:
+            authorizationUri: https://www.facebook.com/v3.0/dialog/oauth
+            tokenUri: https://graph.facebook.com/v3.0/oauth/access_token
+            userInfoUri: https://graph.facebook.com/v3.0/me?fields=id,first_name,middle_name,last_name,name,email,verified,is_verified,picture.width(250).height(250)
+
 #        provider:
 #          auth0:
 #            issuer-uri: https://dev-bzw624y00gxao28a.us.auth0.com/
