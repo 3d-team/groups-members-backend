@@ -1,0 +1,74 @@
+
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: nnduy8501@gmail.com
+    password: Itachihebi2
+    properties:
+      mail:
+        smtp:
+          auth: true
+        starttls:
+          enable: true
+  data:
+    mongodb:
+      user: root
+      password: password
+      uri: mongodb://root:password@localhost:27017/awad?authSource=admin
+  security:
+    basic:
+      enable: false
+    oauth2:
+      client:
+        registration:
+#          auth0:
+#            clientId: NgsQ9u5hqL9HdNZyuMYytajABb9ED2G7
+#            clientSecret: jRPCeYHk2iFWsqJY_x7wBYnPTmwJepip2TupzhK9GzIKgDQzPXLRg1XxeLyvEEWL
+#            redirectUri: "{baseUrl}/oauth2/callback/{registrationId}"
+#            scope:
+#              - openid
+#              - email
+#              - profile
+          google:
+            clientId: 5014057553-8gm9um6vnli3cle5rgigcdjpdrid14m9.apps.googleusercontent.com
+            clientSecret: tWZKVLxaD_ARWsriiiUFYoIk
+            redirectUri: "{baseUrl}/oauth2/callback/{registrationId}"
+            scope:
+              - openid
+              - email
+              - profile
+          facebook:
+            clientId: 2948763485431290
+            clientSecret: 68c80f29174c638acce6893ba300008a
+            # Note that facebook now mandates the use of https redirect URIs,
+            # so make sure your app supports https in production
+            redirectUri: "{baseUrl}/oauth2/callback/{registrationId}"
+            scope:
+              - openid
+              - email
+              - public_profile
+        provider:
+          facebook:
+            authorizationUri: https://www.facebook.com/v3.0/dialog/oauth
+            tokenUri: https://graph.facebook.com/v3.0/oauth/access_token
+            userInfoUri: https://graph.facebook.com/v3.0/me?fields=id,first_name,middle_name,last_name,name,email,verified,is_verified,picture.width(250).height(250)
+
+#        provider:
+#          auth0:
+#            issuer-uri: https://dev-bzw624y00gxao28a.us.auth0.com/
+app:
+  auth:
+    tokenSecret: 04ca023b39512e46d0c2cf4b48d5aac61d34302994c87ed4eff225dcf3b0a218739f3897051a057f9b846a69ea2927a587044164b7bae5e1306219d50b588cb1
+    tokenExpirationMsec: 864000000
+    allowedDomains: student.hcmus.edu.vn,fit.hcmus.edu.vn
+  cors:
+    allowedOrigins: http://localhost:3000,http://localhost:8080
+  oauth2:
+    # After successfully authenticating with the OAuth2 Provider,
+    # we'll be generating an auth token for the user and sending the token to the
+    # redirectUri mentioned by the client in the /oauth2/authorize request.
+    # We're not using cookies because they won't work well in mobile clients.
+    authorizedRedirectUris:
+      - http://localhost:3000/oauth2/redirect
+      - http://localhost:8080/
