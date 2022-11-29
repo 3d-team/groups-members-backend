@@ -2,6 +2,7 @@ package com.team3d.awad.config;
 
 import com.team3d.awad.repository.UserRepository;
 import com.team3d.awad.security.AuthenticationEntryPoint;
+import com.team3d.awad.security.CustomUserDetails;
 import com.team3d.awad.security.CustomUserDetailsService;
 import com.team3d.awad.security.TokenProvider;
 import com.team3d.awad.security.oauth2.CustomOAuth2UserService;
@@ -15,6 +16,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.userdetails.ReactiveUserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -26,7 +28,12 @@ import org.springframework.security.web.server.WebFilterExchange;
 import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
 import org.springframework.security.web.server.authentication.logout.RedirectServerLogoutSuccessHandler;
 import org.springframework.security.web.server.authentication.logout.ServerLogoutSuccessHandler;
+import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
+import org.springframework.security.web.server.savedrequest.NoOpServerRequestCache;
 import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
+import org.springframework.web.server.session.CookieWebSessionIdResolver;
+import org.springframework.web.server.session.WebSessionIdResolver;
+import org.springframework.web.server.session.WebSessionManager;
 import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
@@ -39,15 +46,10 @@ public class SecurityConfig {
     private static final Logger LOGGER = LogManager.getLogger(SecurityConfig.class);
     private final TokenProvider tokenProvider;
 
-    private final UserRepository userRepository;
+    private AuthenticationEntryPoint authenticationEntryPoint;
 
-    private final AuthenticationEntryPoint authenticationEntryPoint;
-
-    public SecurityConfig(TokenProvider tokenProvider, UserRepository userRepository,
-                          AuthenticationEntryPoint authenticationEntryPoint) {
+    public SecurityConfig(TokenProvider tokenProvider) {
         this.tokenProvider = tokenProvider;
-        this.userRepository = userRepository;
-        this.authenticationEntryPoint = authenticationEntryPoint;
     }
 
     @Bean
@@ -57,30 +59,48 @@ public class SecurityConfig {
 
     @Bean
     public SecurityWebFilterChain configure(ServerHttpSecurity http) {
-        return http.authorizeExchange()
-                .pathMatchers(HttpMethod.GET,
-                        "/oauth2/authorization/**",
-                        "/actuator",
-                        "/actuator/**",
-                        "/auth/login",
-                        "/login/**",
-                        "/authorize/resume/**",
-                        "/oauth2/callback/**",
-                        "**/oauth2/**",
-                        "**/o/oauth2/v2/auth/**").permitAll()
-                .anyExchange().authenticated()
+        return http
+
+//                .requestCache().requestCache(NoOpServerRequestCache.getInstance())
+//                .and()
+//                    .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())
+                    .authorizeExchange()
+                        .pathMatchers(
+                                "/favicon.ico",
+                                "/oauth2/authorization/**",
+                                "/actuator",
+                                "/actuator/**",
+                                "/auth/login",
+                                "/login/**",
+                                "/authorize/resume/**",
+                                "/oauth2/callback/**",
+                                "**/oauth2/**",
+                                "**/o/oauth2/v2/auth/**",
+                                "/api/**").permitAll()
+                        .anyExchange().authenticated()
                 .and()
-                .exceptionHandling().authenticationEntryPoint(authenticationEntryPoint)
+                    .exceptionHandling()
+                    .authenticationEntryPoint(authenticationEntryPoint)
+//                        .accessDeniedHandler(((exchange, denied) -> {
+//                            LOGGER.info("Deny request from {}", exchange.getRequest());
+//                            return Mono.empty();
+//                        }))
                 .and()
                     .oauth2Login(oauth2 -> oauth2
                             .authenticationMatcher(new PathPatternParserServerWebExchangeMatcher("/oauth2/callback/{registrationId}"))
                             .authenticationSuccessHandler(this::onAuthenticationSuccess)
                     )
+                    .formLogin().disable()
                 .logout()
                     .logoutSuccessHandler(logoutSuccessHandler())
                 .and()
                     .oauth2Client()
-                .and().build();
+                .and()
+                .formLogin().disable()
+                .cors(ServerHttpSecurity.CorsSpec::disable)
+                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .httpBasic().disable()
+                .build();
     }
 
     /**
@@ -106,25 +126,30 @@ public class SecurityConfig {
         return handler;
     }
 
-    @Bean
-    protected ReactiveAuthenticationManager reactiveAuthenticationManager() {
-        LOGGER.info("Security setup Authentication Manager!");
-        CustomUserDetailsService userDetailsService = new CustomUserDetailsService();
-        return authentication -> {
-            final String username = authentication.getPrincipal().toString();
-            return userDetailsService.findByUsername(username)
-                    .switchIfEmpty(Mono.error(new UsernameNotFoundException("User not found")))
-                    .map(user -> {
-                        return new UsernamePasswordAuthenticationToken(user.getUsername(),
-                                null, user.getAuthorities());
-                    });
-        };
+//    @Bean
+//    public ReactiveUserDetailsService userDetailsService() {
+//        LOGGER.info("Security setup UserDetails Service!");
+//        return new CustomUserDetailsService();
+//    }
 
+//    @Bean
+//    protected ReactiveAuthenticationManager reactiveAuthenticationManager() {
+//        LOGGER.info("Security setup Authentication Manager!");
+//        CustomUserDetailsService userDetailsService = new CustomUserDetailsService();
+//        return authentication -> {
+//            CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
+//            LOGGER.info("Authenticate with {}", userDetails);
+//            return userDetailsService.findByUserId(userDetails.getId())
+//                    .switchIfEmpty(Mono.error(new UsernameNotFoundException("User not found")))
+//                    .map(user -> new UsernamePasswordAuthenticationToken(user.getUsername(),
+//                                user.getPassword(), user.getAuthorities()));
+//        };
+//
 //        UserDetailsRepositoryReactiveAuthenticationManager authenticationManager =
 //                new UserDetailsRepositoryReactiveAuthenticationManager(userDetailsService);
 //        authenticationManager.setPasswordEncoder(passwordEncoder());
 //        return authenticationManager;
-    }
+//    }
 
 //    @Bean
 //    public ReactiveOAuth2UserService<OidcUserRequest, OidcUser> oidcUserService() {

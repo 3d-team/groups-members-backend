@@ -1,11 +1,24 @@
 
 spring:
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: nnduy8501@gmail.com
+    password: Itachihebi2
+    properties:
+      mail:
+        smtp:
+          auth: true
+        starttls:
+          enable: true
   data:
     mongodb:
       user: root
       password: password
       uri: mongodb://root:password@localhost:27017/awad?authSource=admin
   security:
+    basic:
+      enable: false
     oauth2:
       client:
         registration:

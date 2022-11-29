@@ -31,7 +31,7 @@ public class CustomOAuth2UserService implements ReactiveOAuth2UserService<OidcUs
             LOGGER.info("OAuth2 response: {}", attributes);
 
             LOGGER.info("Authorities: {}", oidcUser.getAuthorities());
-            return new CustomUserDetails(oidcUser.getEmail(), oidcUser.getEmail(),
+            return new CustomUserDetails("6383842a2fd7028f30d433a6", oidcUser.getEmail(),
                     null, oidcUser.getAuthorities());
         });
     }

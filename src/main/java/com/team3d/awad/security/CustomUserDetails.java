@@ -65,7 +65,7 @@ public class CustomUserDetails implements OidcUser, UserDetails {
 
     @Override
     public String getUsername() {
-        return email;
+        return id;
     }
 
     @Override

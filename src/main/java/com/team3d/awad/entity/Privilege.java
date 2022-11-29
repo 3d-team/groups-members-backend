@@ -1,17 +1,20 @@
 package com.team3d.awad.entity;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.springframework.data.annotation.Id;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Getter
-@Document("profile")
-public class Groups {
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
+@Document
+public class Privilege {
 
-    @Id
     private String uuid;
 
     private String name;
 
-    private String description;
 }
