@@ -4,13 +4,19 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: nnduy8501@gmail.com
-    password: Itachihebi2
+    password: henohdkjjmzfbynw
+    protocol: smtp
+    tls: true
     properties:
       mail:
         smtp:
           auth: true
-        starttls:
-          enable: true
+          starttls:
+            enable: true
+          ssl:
+            trust: smtp.gmail.com
+
+
   data:
     mongodb:
       user: root

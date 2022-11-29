@@ -1,11 +1,13 @@
 package com.team3d.awad.entity;
 
+import com.team3d.awad.payload.UpdateProfileRequest;
 import com.team3d.awad.security.AuthProvider;
 import lombok.*;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.mapping.DocumentReference;
 
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
@@ -20,7 +22,7 @@ public class User {
     @Id
     private String uuid;
 
-    private String username;
+    private String studentId = "";
 
     private String email;
 
@@ -29,13 +31,39 @@ public class User {
     @Builder.Default
     private String fullName = "";
 
-    private Date dob;
+    @Builder.Default
+    private Date dob = new Date();
 
     @Builder.Default
-    private AuthProvider provider = AuthProvider.local;
+    private String provider = "local";
 
-    private String providerId;
+    @Builder.Default
+    private String providerId = "";
+
+    @Builder.Default
+    private boolean emailVerified = false;
 
     @DocumentReference(lazy = true)
-    private List<Role> roles;
+    @Builder.Default
+    private List<Role> roles = new ArrayList<>();
+
+    public User normalize() {
+        if (roles == null) {
+            roles = new ArrayList<>();
+        }
+        return this;
+    }
+
+    public User activate() {
+        normalize();
+        emailVerified = true;
+        return this;
+    }
+
+    public void updateProfile(UpdateProfileRequest request) {
+        normalize();
+        fullName = request.getFullName();
+        studentId = request.getStudentId();
+        dob = request.getDob();
+    }
 }

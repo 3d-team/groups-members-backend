@@ -57,6 +57,14 @@ public class Group {
         }
     }
 
+    public Group addMember(String memberId) {
+        normalize();
+        if (!this.memberIds.contains(memberId)) {
+            this.memberIds.add(memberId);
+        }
+        return this;
+    }
+
     public Group addMembers(List<String> memberIds) {
         normalize();
         this.memberIds = Stream.concat(this.memberIds.stream(), memberIds.stream())
