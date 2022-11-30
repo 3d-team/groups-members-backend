@@ -1,6 +1,7 @@
 package com.team3d.awad.router;
 
 import com.team3d.awad.router.handler.AuthHandler;
+import com.team3d.awad.router.handler.UserHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.reactive.function.server.RouterFunction;
@@ -13,7 +14,8 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 public class AuthRouter {
 
     @Bean
-    public RouterFunction<ServerResponse> authRouting(AuthHandler handler) {
-        return route(POST("/api/login"), handler::login);
+    public RouterFunction<ServerResponse> authRouting(AuthHandler authHandler, UserHandler userHandler) {
+        return route(POST("/api/login"), authHandler::login)
+                .andRoute(POST("/api/register"), userHandler::create);
     }
 }
