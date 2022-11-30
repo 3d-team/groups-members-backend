@@ -178,7 +178,7 @@ public class SecurityConfig {
 
         String token = tokenProvider.createToken(authentication);
         URI redirectUri = UriComponentsBuilder
-                .fromUriString("/")
+                .fromUriString("http://localhost:3000/oauth2/redirect")
                 .queryParam("token", token)
                 .build().toUri();
         redirectServerAuthenticationSuccessHandler.setLocation(redirectUri);

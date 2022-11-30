@@ -22,7 +22,7 @@ public class MailService {
         this.mailSender = mailSender;
     }
 
-    public String sendSimpleMail(Email email) {
+    public void sendSimpleMail(Email email) {
         try {
             SimpleMailMessage mailMessage = new SimpleMailMessage();
             mailMessage.setFrom(sender);
@@ -30,11 +30,10 @@ public class MailService {
             mailMessage.setText(email.getMsgBody());
             mailMessage.setSubject(email.getSubject());
             mailSender.send(mailMessage);
-            return "Mail Sent Successfully...";
-        }
-        catch (Exception e) {
             LOGGER.info("Sended mail from {}, to {}", sender, email.getRecipient());
-            return "Error while Sending Mail";
+        } catch (Exception e) {
+            LOGGER.info("Cannot send mail from {}, to {}", sender, email.getRecipient());
+            e.printStackTrace();
         }
     }
 }

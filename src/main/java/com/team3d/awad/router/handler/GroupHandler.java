@@ -49,7 +49,7 @@ public class GroupHandler {
                     return Mono.just(group);
                 })
                 .flatMap(groupRepository::save)
-                .flatMap(group -> ServerResponse.created(URI.create("/groups/" + group.getUuid())).build());
+                .flatMap(group -> ServerResponse.ok().body(Mono.just(group.getUuid()), String.class));
     }
 
     public Mono<ServerResponse> get(ServerRequest request) {
@@ -62,17 +62,17 @@ public class GroupHandler {
         return Mono
                 .zip(
                         (data) -> {
-                            Group Class = (Group) data[0];
+                            Group group = (Group) data[0];
                             Group input = (Group) data[1];
-                            Class.update(input);
-                            return Class;
+                            group.update(input);
+                            return group;
                         },
                         groupRepository.findById(request.pathVariable("id")),
                         request.bodyToMono(Group.class)
                 )
                 .cast(Group.class)
                 .flatMap(groupRepository::save)
-                .flatMap(Group -> ServerResponse.noContent().build());
+                .flatMap(group -> ServerResponse.ok().build());
     }
 
     public Mono<ServerResponse> delete(ServerRequest request) {
@@ -80,7 +80,7 @@ public class GroupHandler {
                 .build(groupRepository.deleteById(request.pathVariable("id")));
     }
 
-    public Mono<ServerResponse> addMember(ServerRequest request) {
+    public Mono<ServerResponse> addMembers(ServerRequest request) {
         LOGGER.info("Hit API addMember");
 
         return request.bodyToMono(String[].class)
@@ -93,7 +93,23 @@ public class GroupHandler {
                                     .flatMap(groupRepository::save);
                         }
                 )
-                .flatMap(x -> ServerResponse.noContent().build());
+                .flatMap(group -> ServerResponse.ok().body(Mono.just(group.getUuid()), String.class));
+    }
+
+    public Mono<ServerResponse> join(ServerRequest request) {
+        final String JWT = RequestUtils.getJwtFromRequest(request);
+        if (JWT == null) {
+            return Mono.error(new Exception("Not found JWT"));
+        }
+        String userId = tokenProvider.getUserIdFromToken(JWT);
+        LOGGER.info("Hit API joinGroup with user ID: {}", userId);
+
+        return groupRepository.findById(request.pathVariable("id"))
+                .switchIfEmpty(Mono.error(new Exception("No group found.")))
+                .flatMap(group -> Mono.just(group.addMember(userId)))
+                .flatMap(groupRepository::save)
+                .flatMap(group -> ServerResponse.ok().body(Mono.just(group.getUuid()), String.class));
+
     }
 
     public Mono<ServerResponse> removeMember(ServerRequest request) {
