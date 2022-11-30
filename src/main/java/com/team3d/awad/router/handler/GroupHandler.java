@@ -49,7 +49,7 @@ public class GroupHandler {
                     return Mono.just(group);
                 })
                 .flatMap(groupRepository::save)
-                .flatMap(group -> ServerResponse.created(URI.create("localhost:3000/api/groups/" + group.getUuid())).build());
+                .flatMap(group -> ServerResponse.ok().body(Mono.just(group.getUuid()), String.class));
     }
 
     public Mono<ServerResponse> get(ServerRequest request) {
@@ -72,7 +72,7 @@ public class GroupHandler {
                 )
                 .cast(Group.class)
                 .flatMap(groupRepository::save)
-                .flatMap(group -> ServerResponse.noContent().build());
+                .flatMap(group -> ServerResponse.ok().build());
     }
 
     public Mono<ServerResponse> delete(ServerRequest request) {
