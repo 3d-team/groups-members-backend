@@ -10,7 +10,13 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.http.server.reactive.ServerHttpResponse;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
@@ -31,6 +37,16 @@ import org.springframework.security.web.server.authentication.logout.ServerLogou
 import org.springframework.security.web.server.context.NoOpServerSecurityContextRepository;
 import org.springframework.security.web.server.savedrequest.NoOpServerRequestCache;
 import org.springframework.security.web.server.util.matcher.PathPatternParserServerWebExchangeMatcher;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.reactive.CorsConfigurationSource;
+import org.springframework.web.cors.reactive.CorsUtils;
+import org.springframework.web.cors.reactive.UrlBasedCorsConfigurationSource;
+import org.springframework.web.reactive.config.CorsRegistry;
+import org.springframework.web.reactive.config.WebFluxConfigurer;
+import org.springframework.web.reactive.config.WebFluxConfigurerComposite;
+import org.springframework.web.server.ServerWebExchange;
+import org.springframework.web.server.WebFilter;
+import org.springframework.web.server.WebFilterChain;
 import org.springframework.web.server.session.CookieWebSessionIdResolver;
 import org.springframework.web.server.session.WebSessionIdResolver;
 import org.springframework.web.server.session.WebSessionManager;
@@ -38,6 +54,7 @@ import org.springframework.web.util.UriComponentsBuilder;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.util.Arrays;
 
 @Configuration
 @EnableWebFluxSecurity
@@ -55,6 +72,29 @@ public class SecurityConfig {
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    private static final String ALLOWED_HEADERS = "x-requested-with, authorization, Content-Type, Authorization, credential, X-XSRF-TOKEN";
+    private static final String ALLOWED_METHODS = "GET, PUT, POST, DELETE, OPTIONS";
+    private static final String ALLOWED_ORIGIN = "*";
+    private static final String MAX_AGE = "3600";
+    private static final String FRONTEND_LOCALHOST = "http://localhost:3000";
+    private static final String FRONTEND_STAGING = "http://localhost:3000";
+
+    public CorsConfigurationSource createCorsConfigSource() {
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        CorsConfiguration config = new CorsConfiguration();
+        config.addAllowedOrigin("http://localhost:3000/");
+        config.addAllowedMethod("OPTIONS");
+        config.addAllowedMethod("GET");
+        config.addAllowedMethod("PUT");
+        config.addAllowedMethod("POST");
+        config.addAllowedMethod("DELETE");
+        config.setExposedHeaders(Arrays.asList("Authorization", "content-type", "Access-Control-Allow-Headers"));
+        config.setAllowedHeaders(Arrays.asList("Authorization", "content-type", "Access-Control-Allow-Headers"));
+
+        source.registerCorsConfiguration("/**", config);
+        return source;
     }
 
     @Bean
@@ -77,14 +117,14 @@ public class SecurityConfig {
                                 "**/oauth2/**",
                                 "**/o/oauth2/v2/auth/**",
                                 "/api/**").permitAll()
-                        .anyExchange().authenticated()
+                        .anyExchange().permitAll()
                 .and()
                     .exceptionHandling()
-                    .authenticationEntryPoint(authenticationEntryPoint)
-//                        .accessDeniedHandler(((exchange, denied) -> {
-//                            LOGGER.info("Deny request from {}", exchange.getRequest());
-//                            return Mono.empty();
-//                        }))
+                    .authenticationEntryPoint((swe, e) -> Mono.fromRunnable(() -> {
+                        swe.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                    })).accessDeniedHandler((swe, e) -> Mono.fromRunnable(() -> {
+                        swe.getResponse().setStatusCode(HttpStatus.FORBIDDEN);
+                    }))
                 .and()
                     .oauth2Login(oauth2 -> oauth2
                             .authenticationMatcher(new PathPatternParserServerWebExchangeMatcher("/oauth2/callback/{registrationId}"))
@@ -97,8 +137,8 @@ public class SecurityConfig {
                     .oauth2Client()
                 .and()
                 .formLogin().disable()
-                .cors(ServerHttpSecurity.CorsSpec::disable)
-                .csrf(ServerHttpSecurity.CsrfSpec::disable)
+                .cors().configurationSource(createCorsConfigSource()).and()
+                .csrf().disable()
                 .httpBasic().disable()
                 .build();
     }

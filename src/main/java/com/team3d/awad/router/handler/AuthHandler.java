@@ -27,12 +27,11 @@ public class AuthHandler {
     }
 
     public Mono<ServerResponse> login(ServerRequest request) {
-
         return request.bodyToMono(LoginRequest.class)
                 .flatMap(payload -> userRepository.findByEmail(payload.getEmail())
                         .switchIfEmpty(Mono.error(new UsernameNotFoundException("Email not found")))
                         .flatMap(user -> {
-                            LOGGER.info("Hit API login with {}", user.getEmail());
+                            LOGGER.info("[*] Hit API #Login with email: {}", user.getEmail());
                             if (user.getPassword().equals(payload.getPassword())) {
                                 String token = tokenProvider.createToken(user.getUuid());
                                 return ServerResponse.ok()

@@ -36,6 +36,12 @@ public class TokenAuthentication implements WebFilter {
         LOGGER.info("Hit Web filter: {}", TokenAuthentication.class);
 
         ServerHttpRequest request = exchange.getRequest();
+        String URI = request.getURI().getPath();
+        if (URI.contains("login") || URI.contains("register")) {
+            LOGGER.info("Allow passing Web filter because login");
+            return chain.filter(exchange);
+        }
+
         final String JWT = RequestUtils.getJwtFromRequest(exchange.getRequest());
         if (!StringUtils.hasText(JWT) || !tokenProvider.validateToken(JWT)) {
             LOGGER.info("Not found JWT");

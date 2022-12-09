@@ -29,7 +29,8 @@ public class Group {
 
     private String subject;
 
-    private String room;
+    @Builder.Default
+    private String room = "";
 
     private String ownerId;
 
@@ -39,15 +40,16 @@ public class Group {
     @Builder.Default
     private List<String> memberIds = new ArrayList<>();
 
-    public void update(Group clazz) {
+    public Group update(Group clazz) {
         name = clazz.getName();
         description = clazz.getDescription();
         section = clazz.getSection();
         subject = clazz.getSubject();
         room = clazz.getRoom();
+        return this;
     }
 
-    public void normalize() {
+    public Group normalize() {
         if (coOwnerIds == null) {
             coOwnerIds = new ArrayList<>();
         }
@@ -55,6 +57,8 @@ public class Group {
         if (memberIds == null) {
             memberIds = new ArrayList<>();
         }
+
+        return this;
     }
 
     public Group addMember(String memberId) {

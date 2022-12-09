@@ -16,6 +16,8 @@ import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
 import reactor.core.publisher.Mono;
 
+import java.net.URI;
+
 @Component
 public class UserHandler {
 
@@ -34,9 +36,18 @@ public class UserHandler {
         return ServerResponse.ok().build();
     }
 
+    public Mono<ServerResponse> profile(ServerRequest request) {
+        final String JWT = RequestUtils.getJwtFromRequest(request);
+        String userId = tokenProvider.getUserIdFromToken(JWT);
+        return userRepository.findById(userId)
+                .flatMap(user -> ServerResponse.ok().body(Mono.just(user), User.class))
+                .switchIfEmpty(ServerResponse.notFound().build());
+    }
+
     public Mono<ServerResponse> create(ServerRequest request) {
         return request.bodyToMono(RegisterUserRequest.class)
                 .flatMap(payload -> {
+                    LOGGER.info("[*] Hit API #Register New User with email: {}", payload.getEmail());
                     User user = User.builder()
                             .fullName(payload.getFullName())
                             .email(payload.getEmail())
@@ -62,7 +73,7 @@ public class UserHandler {
             return Mono.error(new Exception("Not found JWT"));
         }
         String userId = tokenProvider.getUserIdFromToken(JWT);
-        LOGGER.info("Hit API updateProfile with user ID: {}", userId);
+        LOGGER.info("[*] Hit API #Update Profile, with user ID: {}", userId);
         return Mono
                 .zip(
                         (data) -> {
@@ -80,12 +91,12 @@ public class UserHandler {
     }
 
     public Mono<ServerResponse> activate(ServerRequest request) {
-        LOGGER.info("Hit API active user ID: {}", request.pathVariable("id"));
+        LOGGER.info("[*] Hit API #Active User ID: {}", request.pathVariable("id"));
         return userRepository.findById(request.pathVariable("id"))
                 .switchIfEmpty(Mono.error(new UsernameNotFoundException("Not found user")))
                 .flatMap(user -> Mono.just(user.activate()))
                 .flatMap(userRepository::save)
-                .flatMap(user -> ServerResponse.ok().build());
+                .flatMap(user -> ServerResponse.created(URI.create("http://localhost:3000/")).build());
     }
 
     public enum Action {
