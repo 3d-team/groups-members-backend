@@ -15,6 +15,8 @@ public class UserRouter {
     @Bean
     public RouterFunction<ServerResponse> userRouting(UserHandler handler) {
         return route(GET("/api/users"), handler::all)
+                .andRoute(GET("/api/profile"), handler::profile)
+                .andRoute(POST("/api/profile"), handler::update)
                 .andRoute(POST("/api/users"), handler::create)
                 .andRoute(PUT("/api/users/{id}"), handler::update)
                 .andRoute(GET("/api/users/activate/{id}"), handler::activate);

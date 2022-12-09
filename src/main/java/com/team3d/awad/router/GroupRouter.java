@@ -19,9 +19,11 @@ public class GroupRouter {
                 .andRoute(GET("/api/groups/{id}"), handler::get)
                 .andRoute(PUT("/api/groups/{id}"), handler::update)
                 .andRoute(DELETE("/api/groups/{id}"), handler::delete)
+                .andRoute(GET("/api/groups/{id}/members"), handler::allMembers)
                 .andRoute(POST("/api/groups/{id}/members"), handler::addMembers)
                 .andRoute(POST("/api/groups/{id}/joining"), handler::join)
                 .andRoute(DELETE("/api/groups/{id}/members/{memberId}"), handler::removeMember)
+                .andRoute(GET("/api/groups/{id}/co-owners"), handler::allCoOwners)
                 .andRoute(POST("/api/groups/{id}/co-owners"), handler::addCoOwner)
                 .andRoute(DELETE("/api/groups/{id}/co-owners/{coOwnerId}"), handler::removeCoOwner);
     }

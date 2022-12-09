@@ -1,7 +1,9 @@
 package com.team3d.awad.router.handler;
 
 import com.team3d.awad.entity.Group;
+import com.team3d.awad.entity.User;
 import com.team3d.awad.repository.GroupRepository;
+import com.team3d.awad.repository.UserRepository;
 import com.team3d.awad.security.TokenProvider;
 import com.team3d.awad.utils.RequestUtils;
 import org.apache.logging.log4j.LogManager;
@@ -9,6 +11,7 @@ import org.apache.logging.log4j.Logger;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
@@ -25,29 +28,33 @@ public class GroupHandler {
 
     private final TokenProvider tokenProvider;
 
+    private final UserRepository userRepository;
 
-    public GroupHandler(GroupRepository groupRepository, TokenProvider tokenProvider) {
+
+    public GroupHandler(GroupRepository groupRepository, TokenProvider tokenProvider, UserRepository userRepository) {
         this.groupRepository = groupRepository;
         this.tokenProvider = tokenProvider;
+        this.userRepository = userRepository;
     }
 
     public Mono<ServerResponse> all(ServerRequest request) {
-        LOGGER.info("API Get all groups");
         final String JWT = RequestUtils.getJwtFromRequest(request);
         String userId = tokenProvider.getUserIdFromToken(JWT);
+        LOGGER.info("[*] Hit API #Get All Groups, of user ID: {}", userId);
         return ServerResponse.ok().body(groupRepository.findAllByOwnerId(userId), Group.class);
     }
 
     public Mono<ServerResponse> create(ServerRequest request) {
-        LOGGER.info("Hit API createGroup endpoint.");
-
         final String JWT = RequestUtils.getJwtFromRequest(request);
         String userId = tokenProvider.getUserIdFromToken(JWT);
+        LOGGER.info("[*] Hit API #Create Group, with Owner ID: {}", userId);
+
         return request.bodyToMono(Group.class)
                 .flatMap(group -> {
                     group.setOwnerId(userId);
                     return Mono.just(group);
                 })
+                .flatMap(group -> Mono.just(group.normalize()))
                 .flatMap(groupRepository::save)
                 .flatMap(group -> ServerResponse.ok().body(Mono.just(group.getUuid()), String.class));
     }
@@ -59,6 +66,8 @@ public class GroupHandler {
     }
 
     public Mono<ServerResponse> update(ServerRequest request) {
+        LOGGER.info("[*] Hit API #Update Group, of Group ID: {}",
+                request.pathVariable("id"));
         return Mono
                 .zip(
                         (data) -> {
@@ -80,8 +89,18 @@ public class GroupHandler {
                 .build(groupRepository.deleteById(request.pathVariable("id")));
     }
 
+    public Mono<ServerResponse> allMembers(ServerRequest request) {
+        return groupRepository.findById(request.pathVariable("id"))
+                .flatMap(group -> {
+                    Flux<User> members = userRepository.findAllByUuidIn(group.getMemberIds());
+                    return ServerResponse.ok().body(members, User.class);
+                })
+                .switchIfEmpty(ServerResponse.notFound().build());
+    }
+
     public Mono<ServerResponse> addMembers(ServerRequest request) {
-        LOGGER.info("Hit API addMember");
+        LOGGER.info("[*] Hit API #Add Member, for Group ID: {}",
+                request.pathVariable("id"));
 
         return request.bodyToMono(String[].class)
                 .flatMap(memberIds -> {
@@ -102,29 +121,39 @@ public class GroupHandler {
             return Mono.error(new Exception("Not found JWT"));
         }
         String userId = tokenProvider.getUserIdFromToken(JWT);
-        LOGGER.info("Hit API joinGroup with user ID: {}", userId);
+        LOGGER.info("[*] Hit API #Join Group, with user ID: {}", userId);
 
         return groupRepository.findById(request.pathVariable("id"))
                 .switchIfEmpty(Mono.error(new Exception("No group found.")))
                 .flatMap(group -> Mono.just(group.addMember(userId)))
                 .flatMap(groupRepository::save)
-                .flatMap(group -> ServerResponse.ok().body(Mono.just(group.getUuid()), String.class));
+                .flatMap(group -> ServerResponse.created(URI.create("http://localhost:3000/")).build());
 
     }
 
     public Mono<ServerResponse> removeMember(ServerRequest request) {
-        LOGGER.info("Hit API removeMember");
-
         return groupRepository.findById(request.pathVariable("id"))
                 .flatMap(group -> {
                     String memberId = request.pathVariable("memberId");
+                    LOGGER.info("[*] Hit API #Remove Member, with User ID: {}",
+                            memberId);
                     return groupRepository.save(group.removeMember(memberId));
                 })
                 .flatMap(group -> ServerResponse.noContent().build());
     }
 
+    public Mono<ServerResponse> allCoOwners(ServerRequest request) {
+        return groupRepository.findById(request.pathVariable("id"))
+                .flatMap(group -> {
+                    Flux<User> members = userRepository.findAllByUuidIn(group.getCoOwnerIds());
+                    return ServerResponse.ok().body(members, User.class);
+                })
+                .switchIfEmpty(ServerResponse.notFound().build());
+    }
+
     public Mono<ServerResponse> addCoOwner(ServerRequest request) {
-        LOGGER.info("Hit API addCoOwner");
+        LOGGER.info("[*] Hit API #Add CoOwner, for Group ID: {}",
+                request.pathVariable("id"));
 
         return request.bodyToMono(String[].class)
                 .flatMap(userIds -> {
@@ -140,11 +169,11 @@ public class GroupHandler {
     }
 
     public Mono<ServerResponse> removeCoOwner(ServerRequest request) {
-        LOGGER.info("Hit API removeCoOwner");
-
         return groupRepository.findById(request.pathVariable("id"))
                 .flatMap(group -> {
                     String coOwnerId = request.pathVariable("coOwnerId");
+                    LOGGER.info("[*] Hit API #Remove Co-Owner, of Group ID: {}, with User ID: {}",
+                            request.pathVariable("id"), coOwnerId);
                     return groupRepository.save(group.removeCoOwner(coOwnerId));
                 })
                 .flatMap(group -> ServerResponse.noContent().build());
