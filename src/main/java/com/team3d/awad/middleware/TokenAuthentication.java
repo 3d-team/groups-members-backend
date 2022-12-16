@@ -33,12 +33,16 @@ public class TokenAuthentication implements WebFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        LOGGER.info("Hit Web filter: {}", TokenAuthentication.class);
+        LOGGER.info("[>] Hit #WebFilter: {}", TokenAuthentication.class);
 
         ServerHttpRequest request = exchange.getRequest();
         String URI = request.getURI().getPath();
         if (URI.contains("login") || URI.contains("register")) {
-            LOGGER.info("Allow passing Web filter because login");
+            LOGGER.info("[*] Allow bypass #WebFilter -> Login/Register: {}", URI);
+            return chain.filter(exchange);
+        }
+        if (URI.contains("ws")) {
+            LOGGER.info("[*] Allow bypass #WebFilter -> WebSocket: {}", URI);
             return chain.filter(exchange);
         }
 
