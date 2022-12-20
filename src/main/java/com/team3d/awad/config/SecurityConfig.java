@@ -116,7 +116,8 @@ public class SecurityConfig {
                                 "/oauth2/callback/**",
                                 "**/oauth2/**",
                                 "**/o/oauth2/v2/auth/**",
-                                "/api/**").permitAll()
+                                "/api/**",
+                                "/ws/**").permitAll()
                         .anyExchange().permitAll()
                 .and()
                     .exceptionHandling()
