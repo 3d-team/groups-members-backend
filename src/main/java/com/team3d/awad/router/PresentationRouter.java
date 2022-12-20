@@ -7,7 +7,6 @@ import org.springframework.web.reactive.function.server.RouterFunction;
 import org.springframework.web.reactive.function.server.ServerResponse;
 
 import static org.springframework.web.reactive.function.server.RequestPredicates.GET;
-import static org.springframework.web.reactive.function.server.RequestPredicates.POST;
 import static org.springframework.web.reactive.function.server.RouterFunctions.route;
 
 @Configuration
@@ -17,6 +16,6 @@ public class PresentationRouter {
     public RouterFunction<ServerResponse> presentationRouting(PresentationHandler handler) {
         return route(GET("/api/presentations"), handler::all)
                 .andRoute(GET("/api/presentations/{id}"), handler::get)
-                .andRoute(POST("/api/presentations"), handler::create);
+                .andRoute(GET("/api/presentations/"), handler::create);
     }
 }
