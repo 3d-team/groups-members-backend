@@ -13,7 +13,7 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 public class QuestionRouter {
 
     @Bean
-    public RouterFunction<ServerResponse> questionRouter(QuestionHandler handler) {
+    public RouterFunction<ServerResponse> questionRouting(QuestionHandler handler) {
         return route(GET("/api/groups/{id}/questions"), handler::all)
                 .andRoute(GET("/api/questions/{id}"), handler::get)
                 .andRoute(POST("/api/questions"), handler::create)

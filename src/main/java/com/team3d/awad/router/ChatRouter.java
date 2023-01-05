@@ -14,7 +14,7 @@ import static org.springframework.web.reactive.function.server.RouterFunctions.r
 public class ChatRouter {
 
     @Bean
-    public RouterFunction<ServerResponse> chatRouter(ChatHandler handler) {
+    public RouterFunction<ServerResponse> chatRouting(ChatHandler handler) {
         return route(GET("/api/groups/{id}/chats"), handler::all)
                 .andRoute(POST("/api/chats"), handler::create);
     }
