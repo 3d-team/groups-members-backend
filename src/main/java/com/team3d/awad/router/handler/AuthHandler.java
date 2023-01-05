@@ -34,6 +34,7 @@ public class AuthHandler {
                             LOGGER.info("[*] Hit API #Login with email: {}", user.getEmail());
                             if (user.getPassword().equals(payload.getPassword())) {
                                 String token = tokenProvider.createToken(user.getUuid());
+                                LOGGER.info("[i] User: {}, JWT: {}", user.getEmail(), token);
                                 return ServerResponse.ok()
                                         .body(Mono.just(token), String.class);
                             }

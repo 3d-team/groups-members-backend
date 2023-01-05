@@ -1,5 +1,8 @@
-
 spring:
+  rsocket:
+    server:
+      mapping-path: /rsocket
+      transport: websocket
   mail:
     host: smtp.gmail.com
     port: 587

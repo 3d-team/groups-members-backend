@@ -8,7 +8,7 @@ import reactor.core.publisher.Mono;
 import reactor.core.publisher.Flux;
 
 @Service
-public class SlideChoiceHandler implements WebSocketHandler {
+public class PresentationJoinerHandler implements WebSocketHandler {
     @Override
     public Mono<Void> handle(WebSocketSession session) {
         Flux<WebSocketMessage> response = session.receive()
