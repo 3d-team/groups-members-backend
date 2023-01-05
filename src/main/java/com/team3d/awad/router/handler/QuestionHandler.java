@@ -75,7 +75,6 @@ public class QuestionHandler {
     private Mono<ServerResponse> upvote(ServerRequest request) {
         final String JWT = RequestUtils.getJwtFromRequest(request);
         String userId = tokenProvider.getUserIdFromToken(JWT);
-        LOGGER.info("[*] Hit API #UpvoteQuestion, with Owner ID: {}", userId);
 
         return questionRepository.findById(request.pathVariable("id"))
                 .flatMap(question -> question.upvote(userId))
@@ -87,7 +86,6 @@ public class QuestionHandler {
     private Mono<ServerResponse> answer(ServerRequest request) {
         final String JWT = RequestUtils.getJwtFromRequest(request);
         String userId = tokenProvider.getUserIdFromToken(JWT);
-        LOGGER.info("[*] Hit API #Create Group, with Owner ID: {}", userId);
         return request.bodyToMono(CreateAnswerRequest.class)
                 .flatMap(payload -> {
                     String questionId = request.pathVariable("id");
@@ -110,7 +108,15 @@ public class QuestionHandler {
 
     public Mono<ServerResponse> allAnswers(ServerRequest request) {
         return questionRepository.findById(request.pathVariable("id"))
-                .flatMap(question -> ServerResponse.ok().body(Flux.just(question.getAnswers()), Question.Answer.class))
+                .flatMap(question -> ServerResponse.ok().body(
+                        Flux.just(question.getAnswers()),
+                        Question.Answer.class))
+                .switchIfEmpty(ServerResponse.notFound().build());
+    }
+
+    public Mono<ServerResponse> delete(ServerRequest request) {
+        return questionRepository.deleteById(request.pathVariable("id"))
+                .then(ServerResponse.ok().build())
                 .switchIfEmpty(ServerResponse.notFound().build());
     }
 

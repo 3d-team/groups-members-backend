@@ -1,4 +1,4 @@
-package com.team3d.awad.payload;
+package com.team3d.awad.payload.metadata;
 
 import lombok.*;
 
