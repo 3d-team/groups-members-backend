@@ -33,33 +33,30 @@ public class TokenAuthentication implements WebFilter {
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
-        LOGGER.info("[>] Hit #WebFilter: {}", TokenAuthentication.class);
-
         ServerHttpRequest request = exchange.getRequest();
         String URI = request.getURI().getPath();
         if (URI.contains("login") || URI.contains("register")) {
-            LOGGER.info("[*] Allow bypass #WebFilter -> Login/Register: {}", URI);
+            return chain.filter(exchange);
+        }
+        if (URI.contains("socket.io")) {
             return chain.filter(exchange);
         }
         if (URI.contains("ws")) {
-            LOGGER.info("[*] Allow bypass #WebFilter -> WebSocket: {}", URI);
             return chain.filter(exchange);
         }
 
         final String JWT = RequestUtils.getJwtFromRequest(exchange.getRequest());
         if (!StringUtils.hasText(JWT) || !tokenProvider.validateToken(JWT)) {
-            LOGGER.info("Not found JWT");
+            LOGGER.info("[!] Not found JWT on request, request ID: {}", exchange.getRequest().getId());
             return Mono.error(new UsernameNotFoundException("User not found"));
         }
         String userId = tokenProvider.getUserIdFromToken(JWT);
-        LOGGER.info("JWT user ID: {}", userId);
         return userDetailsService.findByUserId(userId)
                 .switchIfEmpty(Mono.error(new UsernameNotFoundException("User not found")))
                 .map(user -> {
                     UsernamePasswordAuthenticationToken authentication =
                             new UsernamePasswordAuthenticationToken(user.getUsername(),
                             user.getPassword(), user.getAuthorities());
-                    LOGGER.info("Authentication: {}", authentication);
                     return ReactiveSecurityContextHolder.withAuthentication(authentication);
                 })
                 .then(chain.filter(exchange));

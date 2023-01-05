@@ -1,6 +1,8 @@
 package com.team3d.awad.router.handler;
 
 import com.team3d.awad.entity.Presentation;
+import com.team3d.awad.manager.SharingPresentationManager;
+import com.team3d.awad.payload.CreatePresentationRequest;
 import com.team3d.awad.repository.PresentationRepository;
 import com.team3d.awad.security.TokenProvider;
 import com.team3d.awad.utils.RequestUtils;
@@ -20,9 +22,13 @@ public class PresentationHandler {
 
     private final PresentationRepository presentationRepository;
 
-    public PresentationHandler(TokenProvider tokenProvider, PresentationRepository presentationRepository) {
+    private final SharingPresentationManager presentationManager;
+
+    public PresentationHandler(TokenProvider tokenProvider,
+                               PresentationRepository presentationRepository, SharingPresentationManager presentationManager) {
         this.tokenProvider = tokenProvider;
         this.presentationRepository = presentationRepository;
+        this.presentationManager = presentationManager;
     }
 
     public Mono<ServerResponse> all(ServerRequest request) {
@@ -35,7 +41,7 @@ public class PresentationHandler {
 
     public Mono<ServerResponse> get(ServerRequest request) {
         return presentationRepository.findById(request.pathVariable("id"))
-                .flatMap(presentation -> ServerResponse.ok().body(presentation, Presentation.class))
+                .flatMap(presentation -> ServerResponse.ok().body(Mono.just(presentation), Presentation.class))
                 .switchIfEmpty(ServerResponse.notFound().build());
     }
 
@@ -43,15 +49,37 @@ public class PresentationHandler {
         final String JWT = RequestUtils.getJwtFromRequest(request);
         String userId = tokenProvider.getUserIdFromToken(JWT);
         LOGGER.info("[*] Hit API #Create Presentation, of Host ID: {}", userId);
-        return request.bodyToMono(String.class)
-                .flatMap(presentationName -> {
+        return request.bodyToMono(CreatePresentationRequest.class)
+                .flatMap(payload -> {
                     Presentation presentation = Presentation.builder()
-                            .name(presentationName)
+                            .name(payload.getName())
                             .hostId(userId)
                             .build();
                     return Mono.just(presentation);
                 })
                 .flatMap(presentationRepository::save)
-                .flatMap(presentation -> ServerResponse.ok().body(presentation, Presentation.class));
+                .flatMap(presentation -> ServerResponse.ok().body(Mono.just(presentation), Presentation.class));
+    }
+
+    public Mono<ServerResponse> updateSlides(ServerRequest request) {
+        return request.bodyToMono(Presentation.Slide[].class)
+                .flatMap(payload -> {
+                    LOGGER.info("[>] Hit API #UpdateSlides, presentation ID: {}, payload: {}",
+                            request.pathVariable("id"), payload);
+                    return presentationRepository.findById(request.pathVariable("id"))
+                            .flatMap(presentation -> {
+                                presentation.updateSlides(payload);
+                                presentationManager.sendUpdate(presentation);
+                                return ServerResponse.ok().body(presentationRepository.save(presentation),
+                                        Presentation.class);
+                            })
+                            .switchIfEmpty(ServerResponse.notFound().build());
+                });
+    }
+
+    public Mono<ServerResponse> share(ServerRequest request) {
+        String presentationId = request.pathVariable("id");
+        return presentationManager.shareNewPresentation(presentationId)
+                .flatMap(sessionId -> ServerResponse.ok().body(Mono.just(sessionId), String.class));
     }
 }

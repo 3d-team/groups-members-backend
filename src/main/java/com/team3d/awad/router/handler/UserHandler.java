@@ -1,5 +1,6 @@
 package com.team3d.awad.router.handler;
 
+import com.team3d.awad.entity.Presentation;
 import com.team3d.awad.entity.User;
 import com.team3d.awad.payload.Email;
 import com.team3d.awad.payload.RegisterUserRequest;
@@ -34,6 +35,13 @@ public class UserHandler {
 
     public Mono<ServerResponse> all(ServerRequest request) {
         return ServerResponse.ok().build();
+    }
+
+    public Mono<ServerResponse> get(ServerRequest request) {
+        LOGGER.info("[*] Hit API #GetUser with, id: {}", request.pathVariable("id"));
+        return userRepository.findById(request.pathVariable("id"))
+                .flatMap(user -> ServerResponse.ok().body(Mono.just(user), User.class))
+                .switchIfEmpty(ServerResponse.notFound().build());
     }
 
     public Mono<ServerResponse> profile(ServerRequest request) {

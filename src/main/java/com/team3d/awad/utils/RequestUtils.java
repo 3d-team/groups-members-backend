@@ -12,7 +12,6 @@ public class RequestUtils {
 
     public static String getJwtFromRequest(ServerHttpRequest request) {
         String bearerToken = String.valueOf(request.getHeaders().getFirst("Authorization"));
-        LOGGER.info("Bearer token: {}", bearerToken);
         String bearerHeader = "Bearer ";
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(bearerHeader)) {
             return bearerToken.substring(bearerHeader.length());
