@@ -90,6 +90,7 @@ public class Group {
 
     public Group addCoOwners(List<String> coOwnerIds) {
         normalize();
+        this.memberIds.removeAll(coOwnerIds);
         this.coOwnerIds = Stream.concat(this.coOwnerIds.stream(), coOwnerIds.stream())
                 .distinct().collect(Collectors.toList());
         return this;
@@ -98,6 +99,7 @@ public class Group {
     public Group removeCoOwner(String coOwnerId) {
         normalize();
         this.coOwnerIds.remove(coOwnerId);
+        this.memberIds.add(coOwnerId);
         return this;
     }
 }
