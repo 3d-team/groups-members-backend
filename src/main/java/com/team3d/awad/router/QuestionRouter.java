@@ -18,6 +18,7 @@ public class QuestionRouter {
                 .andRoute(GET("/api/questions/{id}"), handler::get)
                 .andRoute(POST("/api/questions"), handler::create)
                 .andRoute(POST("/api/questions/{id}"), handler::handle)
-                .andRoute(GET("/api/questions/{id}/answers"), handler::allAnswers);
+                .andRoute(GET("/api/questions/{id}/answers"), handler::allAnswers)
+                .andRoute(DELETE("/api/questions/{id}"), handler::delete);
     }
 }
