@@ -25,7 +25,8 @@ public class PresentationHandler {
     private final SharingPresentationManager presentationManager;
 
     public PresentationHandler(TokenProvider tokenProvider,
-                               PresentationRepository presentationRepository, SharingPresentationManager presentationManager) {
+                               PresentationRepository presentationRepository,
+                               SharingPresentationManager presentationManager) {
         this.tokenProvider = tokenProvider;
         this.presentationRepository = presentationRepository;
         this.presentationManager = presentationManager;
@@ -69,7 +70,7 @@ public class PresentationHandler {
                     return presentationRepository.findById(request.pathVariable("id"))
                             .flatMap(presentation -> {
                                 presentation.updateSlides(payload);
-                                presentationManager.sendUpdate(presentation);
+                                presentationManager.publishPresentationUpdate(presentation);
                                 return ServerResponse.ok().body(presentationRepository.save(presentation),
                                         Presentation.class);
                             })

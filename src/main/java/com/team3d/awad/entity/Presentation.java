@@ -53,9 +53,6 @@ public class Presentation {
 
     public void updateSlides(Slide[] payload) {
         List<Slide> slides = Stream.of(payload).collect(Collectors.toList());
-        slides.stream()
-                .filter(slide -> StringUtils.hasText(slide.getUuid()))
-                .forEach(slide -> slide.setUuid(UUID.randomUUID().toString()));
         setSlides(slides);
     }
 
@@ -70,9 +67,11 @@ public class Presentation {
         @Builder.Default
         private String uuid = UUID.randomUUID().toString();
 
-        private String title;
+        @Builder.Default
+        private String title = "";
 
-        private String type;
+        @Builder.Default
+        private String type = "multiple-choice";
 
         @Builder.Default
         private String backgroundImage = "";

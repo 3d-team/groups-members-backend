@@ -33,7 +33,7 @@ public class Question {
     @Builder.Default
     private List<Answer> answers = new ArrayList<>();
 
-    private String groupId;
+    private String presentationId;
 
     public Mono<Question> upvote(String voterId) {
         voterIds.add(voterId);

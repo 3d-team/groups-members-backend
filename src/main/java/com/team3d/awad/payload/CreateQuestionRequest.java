@@ -15,5 +15,5 @@ public class CreateQuestionRequest {
 
     private String content;
 
-    private String groupId;
+    private String presentationId;
 }

@@ -6,5 +6,5 @@ import reactor.core.publisher.Flux;
 
 public interface QuestionRepository extends ReactiveMongoRepository<Question, String> {
 
-    Flux<Question> findAllByGroupId(String groupId);
+    Flux<Question> findAllByPresentationId(String presentationId);
 }

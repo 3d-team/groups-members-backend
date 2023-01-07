@@ -30,7 +30,7 @@ public class QuestionHandler {
 
     public Mono<ServerResponse> all(ServerRequest request) {
         return ServerResponse.ok().body(questionRepository
-                .findAllByGroupId(request.pathVariable("id")), Question.class);
+                .findAllByPresentationId(request.pathVariable("id")), Question.class);
     }
 
     public Mono<ServerResponse> get(ServerRequest request) {
@@ -45,7 +45,7 @@ public class QuestionHandler {
                     Question question = Question.builder()
                             .title(payload.getTitle())
                             .content(payload.getContent())
-                            .groupId(payload.getGroupId())
+                            .presentationId(payload.getPresentationId())
                             .build();
                     return questionRepository.save(question);
                 })

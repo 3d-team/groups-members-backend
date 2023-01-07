@@ -15,7 +15,7 @@ public class ChatRouter {
 
     @Bean
     public RouterFunction<ServerResponse> chatRouting(ChatHandler handler) {
-        return route(GET("/api/groups/{id}/chats"), handler::all)
+        return route(GET("/api/presentations/{id}/chats"), handler::all)
                 .andRoute(POST("/api/chats"), handler::create);
     }
 }

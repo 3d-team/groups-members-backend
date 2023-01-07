@@ -7,9 +7,9 @@ import lombok.NoArgsConstructor;
 @Getter
 @AllArgsConstructor
 @NoArgsConstructor
-public class SubscribeGroupChatMetadata {
+public class SubscribePresentationChatMetadata {
 
-    private String groupId;
+    private String presentationId;
 
     private String clientId;
 }

@@ -14,7 +14,7 @@ public class QuestionRouter {
 
     @Bean
     public RouterFunction<ServerResponse> questionRouting(QuestionHandler handler) {
-        return route(GET("/api/groups/{id}/questions"), handler::all)
+        return route(GET("/api/presentations/{id}/questions"), handler::all)
                 .andRoute(GET("/api/questions/{id}"), handler::get)
                 .andRoute(POST("/api/questions"), handler::create)
                 .andRoute(POST("/api/questions/{id}"), handler::handle)

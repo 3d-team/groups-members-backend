@@ -2,8 +2,8 @@ package com.team3d.awad.manager;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.team3d.awad.entity.Message;
 import com.team3d.awad.entity.Presentation;
-import com.team3d.awad.entity.User;
 import com.team3d.awad.repository.PresentationRepository;
 import com.team3d.awad.ws.PresentationHostHandler;
 import lombok.AllArgsConstructor;
@@ -28,6 +28,10 @@ public class SharingPresentationManager {
 
     private static final String PRESENTATION_STREAM = "presentation:update";
 
+    private static final String CHAT_ENDPOINT = "chat:join";
+
+    private static final String CHAT_STREAM = "chat:update";
+
     private static final Logger LOGGER = LogManager.getLogger(PresentationHostHandler.class);
 
     private Map<String, SharingPresentationSession> shares = new ConcurrentHashMap<>();
@@ -39,6 +43,23 @@ public class SharingPresentationManager {
     public SharingPresentationManager(PresentationRepository presentationRepository, ObjectMapper mapper) {
         this.presentationRepository = presentationRepository;
         this.mapper = mapper;
+    }
+
+    public Mono<String> shareNewPresentation(String presentationId) {
+        return presentationRepository.findById(presentationId)
+                .flatMap(presentation -> {
+                    Map<String, List<String>> choices = presentation.getSlides().stream()
+                            .collect(Collectors.toMap(
+                                    Presentation.Slide::getUuid,
+                                    slide -> new ArrayList<>())
+                            );
+                    SharingPresentationSession session = SharingPresentationSession.builder()
+                            .presentationId(presentationId)
+                            .choices(choices)
+                            .build();
+                    shares.put(presentationId, session);
+                    return Mono.just(session.getUuid());
+                });
     }
 
     public void outPresentation(String presentationId, String clientId) {
@@ -57,35 +78,42 @@ public class SharingPresentationManager {
         session.joinPresentation(clientId, requester);
     }
 
-    public void sendUpdate(Presentation presentation) {
+    public void publishPresentationUpdate(Presentation presentation) {
         String presentationId = presentation.getUuid();
         if (!shares.containsKey(presentationId)) {
             return;
         }
         SharingPresentationSession session = shares.get(presentationId);
         try {
-            String JSON = mapper.writeValueAsString(presentation);
-            session.sendUpdate(JSON);
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("session", session);
+            payload.put("presentation", presentation);
+            String JSON = mapper.writeValueAsString(payload);
+
+            session.sendBroadcast(JSON, PRESENTATION_STREAM);
         } catch (JsonProcessingException e) {
             LOGGER.error("Can't serialize Presentation");
             throw new RuntimeException(e);
         }
     }
 
-    public Mono<String> shareNewPresentation(String presentationId) {
-        return presentationRepository.findById(presentationId)
-                .flatMap(presentation -> {
-                    Map<String, List<String>> choices = presentation.getSlides().stream()
-                            .collect(Collectors.toMap(
-                                    Presentation.Slide::getUuid,
-                                    slide -> new ArrayList<>())
-                            );
-                    SharingPresentationSession session = SharingPresentationSession.builder()
-                            .presentationId(presentationId)
-                            .choices(choices)
-                            .build();
-                    return Mono.just(session.getUuid());
-                });
+    public void publishNewMessage(String presentationId, Message message) {
+        if (!shares.containsKey(presentationId)) {
+            return;
+        }
+        LOGGER.info("Publish new message to {}", presentationId);
+        SharingPresentationSession session = shares.get(presentationId);
+        try {
+            Map<String, Object> payload = new HashMap<>();
+            payload.put("session", session);
+            payload.put("message", message);
+            String JSON = mapper.writeValueAsString(payload);
+
+            session.sendBroadcast(JSON, CHAT_STREAM);
+        } catch (JsonProcessingException e) {
+            LOGGER.error("Can't serialize Presentation");
+            throw new RuntimeException(e);
+        }
     }
 
     @Getter
@@ -94,10 +122,12 @@ public class SharingPresentationManager {
     @Builder
     private static class SharingPresentationSession {
 
+        @Builder.Default
         private String uuid = UUID.randomUUID().toString();
 
         private String presentationId;
 
+        @Builder.Default
         private final Map<String, RSocketRequester> requesters = new HashMap<>();
 
         private Map<String, List<String>> choices;
@@ -120,18 +150,18 @@ public class SharingPresentationManager {
             }
         }
 
-        public void sendUpdate(String JSON) {
+        public void sendBroadcast(String JSON, String route) {
             LOGGER.info("[rws] Send broadcast all listeners, presentation: {}", JSON);
-            requesters.forEach((key, value) -> send(key, JSON));
+            requesters.forEach((key, value) -> sendClient(key, JSON, route));
         }
 
-        public void send(String clientId, String data) {
+        public void sendClient(String clientId, String JSON, String route) {
             RSocketRequester requester = requesters.get(clientId);
             if (requester == null) {
                 return;
             }
             LOGGER.info("[>] Send update to client, clientId: {}", clientId);
-            requester.route(PRESENTATION_STREAM).data(data).send().subscribe();
+            requester.route(route).data(JSON).send().subscribe();
         }
     }
 }

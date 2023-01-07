@@ -13,8 +13,8 @@ import java.util.Date;
 @AllArgsConstructor
 @NoArgsConstructor
 @Builder
-@Document("group_message")
-public class GroupMessage {
+@Document("message")
+public class Message {
 
     @Id
     private String uuid;
@@ -25,7 +25,7 @@ public class GroupMessage {
 
     private String content;
 
-    private Date createdTime;
+    private Date createdDate;
 
-    private String groupId;
+    private String presentationId;
 }

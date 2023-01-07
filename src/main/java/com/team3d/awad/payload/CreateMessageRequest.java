@@ -17,7 +17,7 @@ public class CreateMessageRequest {
 
     private String content;
 
-    private Date createdTime;
+    private Date createdDate;
 
-    private String groupId;
+    private String presentationId;
 }
