@@ -7,6 +7,7 @@ import com.team3d.awad.payload.UpdateProfileRequest;
 import com.team3d.awad.repository.UserRepository;
 import com.team3d.awad.security.TokenProvider;
 import com.team3d.awad.service.MailService;
+import com.team3d.awad.utils.PasswordHasher;
 import com.team3d.awad.utils.RequestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,15 +28,17 @@ public class UserHandler {
     private final MailService mailService;
     private final TokenProvider tokenProvider;
     private final PasswordEncoder passwordEncoder;
+    private final PasswordHasher hasher;
 
     public UserHandler(UserRepository userRepository,
                        MailService mailService,
                        TokenProvider tokenProvider,
-                       PasswordEncoder passwordEncoder) {
+                       PasswordEncoder passwordEncoder, PasswordHasher hasher) {
         this.userRepository = userRepository;
         this.mailService = mailService;
         this.tokenProvider = tokenProvider;
         this.passwordEncoder = passwordEncoder;
+        this.hasher = hasher;
     }
 
     public Mono<ServerResponse> all(ServerRequest request) {
@@ -64,9 +67,10 @@ public class UserHandler {
                     User user = User.builder()
                             .fullName(payload.getFullName())
                             .email(payload.getEmail())
-                            .password(passwordEncoder.encode(payload.getPassword()))
+                            .password(hasher.hash(payload.getPassword()))
                             .studentId(payload.getStudentId())
                             .build();
+                    LOGGER.info(user);
                     return userRepository.save(user);
                 })
                 .flatMap(user -> {

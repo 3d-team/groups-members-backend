@@ -44,6 +44,9 @@ public class TokenAuthentication implements WebFilter {
         if (URI.contains("ws")) {
             return chain.filter(exchange);
         }
+        if (URI.contains("reset-password")) {
+            return chain.filter(exchange);
+        }
 
         final String JWT = RequestUtils.getJwtFromRequest(exchange.getRequest());
         if (!StringUtils.hasText(JWT) || !tokenProvider.validateToken(JWT)) {

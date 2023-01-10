@@ -7,6 +7,7 @@ import com.team3d.awad.payload.LoginRequest;
 import com.team3d.awad.repository.UserRepository;
 import com.team3d.awad.security.TokenProvider;
 import com.team3d.awad.service.MailService;
+import com.team3d.awad.utils.PasswordHasher;
 import com.team3d.awad.utils.RequestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -32,13 +33,16 @@ public class AuthHandler {
 
     private final MailService mailService;
 
+    private final PasswordHasher hasher;
+
     public AuthHandler(UserRepository userRepository,
                        TokenProvider tokenProvider,
-                       PasswordEncoder passwordEncoder, MailService mailService) {
+                       PasswordEncoder passwordEncoder, MailService mailService, PasswordHasher hasher) {
         this.userRepository = userRepository;
         this.tokenProvider = tokenProvider;
         this.passwordEncoder = passwordEncoder;
         this.mailService = mailService;
+        this.hasher = hasher;
     }
 
     public Mono<ServerResponse> login(ServerRequest request) {
@@ -47,8 +51,7 @@ public class AuthHandler {
                         .switchIfEmpty(Mono.error(new UsernameNotFoundException("Email not found")))
                         .flatMap(user -> {
                             LOGGER.info("[*] Hit API #Login with email: {}", user.getEmail());
-                            String encryptedPass = passwordEncoder.encode(payload.getPassword());
-                            if (user.getPassword().equals(encryptedPass)) {
+                            if (hasher.authenticate(payload.getPassword(), user.getPassword())) {
                                 String token = tokenProvider.createToken(user.getUuid());
                                 LOGGER.info("[i] User: {}, JWT: {}", user.getEmail(), token);
                                 return ServerResponse.ok()
@@ -63,8 +66,8 @@ public class AuthHandler {
         return request.bodyToMono(String.class)
                 .flatMap(email -> userRepository.findByEmail(email)
                         .flatMap(user -> {
-                            String newPassword = alphaNumericString(6);
-                            user.setPassword(passwordEncoder.encode(newPassword));
+                            String newPassword = alphaNumericString(8);
+                            user.setPassword(hasher.hash(newPassword));
                             Email mail = Email.builder()
                                     .recipient(email)
                                     .msgBody("New password: " + newPassword + " (Please do not share with anyone).")
@@ -100,8 +103,8 @@ public class AuthHandler {
                 .flatMap(payload -> userRepository.findById(userId)
                         .flatMap(user -> {
                             String oldPassword = payload.getOldPassword();
-                            if (user.getPassword().equals(passwordEncoder.encode(oldPassword))) {
-                                user.setPassword(payload.getNewPassword());
+                            if (hasher.authenticate(oldPassword, user.getPassword())) {
+                                user.setPassword(hasher.hash(payload.getNewPassword()));
                                 return ServerResponse.ok().body(userRepository.save(user), User.class);
                             }
                             return ServerResponse.badRequest().build();
