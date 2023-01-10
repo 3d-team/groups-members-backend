@@ -18,6 +18,7 @@ public class PresentationRouter {
                 .andRoute(GET("/api/presentations/{id}"), handler::get)
                 .andRoute(POST("/api/presentations"), handler::create)
                 .andRoute(PUT("/api/presentations/{id}/slides"), handler::updateSlides)
-                .andRoute(POST("/api/presentations/{id}/share"), handler::share);
+                .andRoute(POST("/api/presentations/{id}/share"), handler::share)
+                .andRoute(POST("/api/presentations/{id}/voting"), handler::voting);
     }
 }

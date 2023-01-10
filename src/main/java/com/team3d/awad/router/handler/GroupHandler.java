@@ -15,6 +15,9 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -41,7 +44,10 @@ public class GroupHandler {
         final String JWT = RequestUtils.getJwtFromRequest(request);
         String userId = tokenProvider.getUserIdFromToken(JWT);
         LOGGER.info("[*] Hit API #Get All Groups, of user ID: {}", userId);
-        return ServerResponse.ok().body(groupRepository.findAllByOwnerId(userId), Group.class);
+        List<String> coOwnerIds = Collections.singletonList(userId);
+        List<String> memberIds = Collections.singletonList(userId);
+        return ServerResponse.ok().body(groupRepository
+                .findAllByOwnerIdOrCoOwnerIdsInOrMemberIdsIn(userId, coOwnerIds, memberIds), Group.class);
     }
 
     public Mono<ServerResponse> create(ServerRequest request) {
@@ -127,7 +133,9 @@ public class GroupHandler {
                 .switchIfEmpty(Mono.error(new Exception("No group found.")))
                 .flatMap(group -> Mono.just(group.addMember(userId)))
                 .flatMap(groupRepository::save)
-                .flatMap(group -> ServerResponse.created(URI.create("http://localhost:3000/")).build());
+                .flatMap(group -> ServerResponse
+                        .created(URI.create("http://localhost:3000/classes/" + group.getUuid()))
+                        .build());
 
     }
 

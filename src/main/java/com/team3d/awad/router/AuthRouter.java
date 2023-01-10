@@ -16,6 +16,8 @@ public class AuthRouter {
     @Bean
     public RouterFunction<ServerResponse> authRouting(AuthHandler authHandler, UserHandler userHandler) {
         return route(POST("/api/login"), authHandler::login)
-                .andRoute(POST("/api/register"), userHandler::create);
+                .andRoute(POST("/api/register"), userHandler::create)
+                .andRoute(POST("/api/reset-password"), authHandler::resetPassword)
+                .andRoute(POST("/api/change-password"), authHandler::changePassword);
     }
 }

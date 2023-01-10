@@ -36,6 +36,9 @@ public class Question {
     private String presentationId;
 
     public Mono<Question> upvote(String voterId) {
+        if (voterIds.contains(voterId)) {
+            return Mono.just(this);
+        }
         voterIds.add(voterId);
         return Mono.just(this);
     }

@@ -3,6 +3,7 @@ package com.team3d.awad.router.handler;
 import com.team3d.awad.entity.Presentation;
 import com.team3d.awad.manager.SharingPresentationManager;
 import com.team3d.awad.payload.CreatePresentationRequest;
+import com.team3d.awad.payload.VotingSlideRequest;
 import com.team3d.awad.repository.PresentationRepository;
 import com.team3d.awad.security.TokenProvider;
 import com.team3d.awad.utils.RequestUtils;
@@ -70,6 +71,7 @@ public class PresentationHandler {
                     return presentationRepository.findById(request.pathVariable("id"))
                             .flatMap(presentation -> {
                                 presentation.updateSlides(payload);
+                                presentationManager.updatePresentationSession(presentation);
                                 presentationManager.publishPresentationUpdate(presentation);
                                 return ServerResponse.ok().body(presentationRepository.save(presentation),
                                         Presentation.class);
@@ -82,5 +84,18 @@ public class PresentationHandler {
         String presentationId = request.pathVariable("id");
         return presentationManager.shareNewPresentation(presentationId)
                 .flatMap(sessionId -> ServerResponse.ok().body(Mono.just(sessionId), String.class));
+    }
+
+    public Mono<ServerResponse> voting(ServerRequest request) {
+        String presentationId = request.pathVariable("id");
+        return request.bodyToMono(VotingSlideRequest.class)
+                .flatMap(payload -> {
+                    String optionId = payload.getOptionId();
+                    String clientId = payload.getClientId();
+                    presentationManager.voting(presentationId, optionId, clientId);
+                    presentationManager.publishPresentationSession(presentationId);
+                    return ServerResponse.ok().body(Mono.just(presentationManager), SharingPresentationManager.class);
+                })
+                .switchIfEmpty(ServerResponse.badRequest().build());
     }
 }

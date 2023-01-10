@@ -79,7 +79,7 @@ public class QuestionHandler {
         return questionRepository.findById(request.pathVariable("id"))
                 .flatMap(question -> question.upvote(userId))
                 .flatMap(questionRepository::save)
-                .flatMap(question -> ServerResponse.ok().body(question, Question.class))
+                .flatMap(question -> ServerResponse.ok().body(Mono.just(question), Question.class))
                 .switchIfEmpty(ServerResponse.notFound().build());
     }
 

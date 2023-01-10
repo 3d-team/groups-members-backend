@@ -1,6 +1,5 @@
 package com.team3d.awad.router.handler;
 
-import com.team3d.awad.entity.Presentation;
 import com.team3d.awad.entity.User;
 import com.team3d.awad.payload.Email;
 import com.team3d.awad.payload.RegisterUserRequest;
@@ -12,6 +11,7 @@ import com.team3d.awad.utils.RequestUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
@@ -26,11 +26,16 @@ public class UserHandler {
     private final UserRepository userRepository;
     private final MailService mailService;
     private final TokenProvider tokenProvider;
+    private final PasswordEncoder passwordEncoder;
 
-    public UserHandler(UserRepository userRepository, MailService mailService, TokenProvider tokenProvider) {
+    public UserHandler(UserRepository userRepository,
+                       MailService mailService,
+                       TokenProvider tokenProvider,
+                       PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.mailService = mailService;
         this.tokenProvider = tokenProvider;
+        this.passwordEncoder = passwordEncoder;
     }
 
     public Mono<ServerResponse> all(ServerRequest request) {
@@ -59,7 +64,7 @@ public class UserHandler {
                     User user = User.builder()
                             .fullName(payload.getFullName())
                             .email(payload.getEmail())
-                            .password(payload.getPassword())
+                            .password(passwordEncoder.encode(payload.getPassword()))
                             .studentId(payload.getStudentId())
                             .build();
                     return userRepository.save(user);
