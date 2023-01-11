@@ -26,8 +26,8 @@ public class PresentationHandler {
     private final SharingPresentationManager presentationManager;
 
     public PresentationHandler(TokenProvider tokenProvider,
-                               PresentationRepository presentationRepository,
-                               SharingPresentationManager presentationManager) {
+            PresentationRepository presentationRepository,
+            SharingPresentationManager presentationManager) {
         this.tokenProvider = tokenProvider;
         this.presentationRepository = presentationRepository;
         this.presentationManager = presentationManager;
@@ -97,5 +97,11 @@ public class PresentationHandler {
                     return ServerResponse.ok().body(Mono.just(presentationManager), SharingPresentationManager.class);
                 })
                 .switchIfEmpty(ServerResponse.badRequest().build());
+    }
+
+    public Mono<ServerResponse> delete(ServerRequest request) {
+        String presentationId = request.pathVariable("id");
+        LOGGER.info("@DUKE_____presentationId: " + presentationId);
+        return ServerResponse.noContent().build(presentationRepository.deleteById(presentationId));
     }
 }
